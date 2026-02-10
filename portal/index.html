@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Knee ROM Tracker | Clinical Portal</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --success: #059669;
+            --warning: #d97706;
+            --danger: #dc2626;
+            --info: #0891b2;
+            --dark: #0f172a;
+            --gray: #64748b;
+            --light: #f8fafc;
+            --border: #e2e8f0;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--light);
+            color: var(--dark);
+        }
+        
+        /* Login Screen */
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 2rem;
+        }
+        
+        .login-box {
+            background: white;
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .login-box h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: var(--dark);
+        }
+        
+        .role-selector {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .role-btn {
+            flex: 1;
+            padding: 1rem;
+            border: 2px solid var(--border);
+            background: white;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+        
+        .role-btn.active {
+            border-color: var(--primary);
+            background: #eff6ff;
+            color: var(--primary);
+        }
+        
+        .role-btn i {
+            display: block;
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--gray);
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 1rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.3);
+        }
+        
+        /* Dashboard Layout */
+        .dashboard {
+            display: none;
+            min-height: 100vh;
+        }
+        
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 280px;
+            height: 100vh;
+            background: var(--dark);
+            color: white;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .nav-menu {
+            list-style: none;
+        }
+        
+        .nav-item {
+            margin-bottom: 0.5rem;
+        }
+        
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem;
+            color: #94a3b8;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+        
+        .main-content {
+            margin-left: 280px;
+            padding: 2rem;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .header h2 {
+            font-size: 1.875rem;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .badge {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        
+        .badge-pt { background: #dbeafe; color: var(--primary); }
+        .badge-patient { background: #d1fae5; color: var(--success); }
+        
+        /* Connection Panel */
+        .connection-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--danger);
+            animation: pulse 2s infinite;
+        }
+        
+        .status-dot.connected {
+            background: var(--success);
+            animation: none;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-left: 4px solid var(--primary);
+        }
+        
+        .stat-card.warning { border-left-color: var(--warning); }
+        .stat-card.success { border-left-color: var(--success); }
+        .stat-card.danger { border-left-color: var(--danger); }
+        
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+        
+        .stat-unit {
+            font-size: 0.875rem;
+            color: var(--gray);
+            margin-left: 0.25rem;
+        }
+        
+        .stat-trend {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            margin-top: 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .trend-up { color: var(--success); }
+        .trend-down { color: var(--danger); }
+        
+        /* Charts Section */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .chart-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+        
+        /* Data Table */
+        .data-section {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .section-header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .data-table th,
+        .data-table td {
+            text-align: left;
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .data-table th {
+            font-weight: 600;
+            color: var(--gray);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+        }
+        
+        .data-table tr:hover {
+            background: var(--light);
+        }
+        
+        .quality-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        
+        .quality-high { background: #d1fae5; color: var(--success); }
+        .quality-medium { background: #fef3c7; color: var(--warning); }
+        .quality-low { background: #fee2e2; color: var(--danger); }
+        
+        /* Diagnostic Panel */
+        .diagnostic-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .diagnostic-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+        
+        .diagnostic-card {
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+        }
+        
+        .diagnostic-card h4 {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            color: var(--dark);
+        }
+        
+        .diagnostic-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .diagnostic-normal { color: var(--success); }
+        .diagnostic-warning { color: var(--warning); }
+        .diagnostic-critical { color: var(--danger); }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+        
+        /* Serial Output */
+        .serial-output {
+            background: #1e293b;
+            color: #e2e8f0;
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 1rem;
+        }
+        
+        .serial-line {
+            padding: 0.25rem 0;
+            border-bottom: 1px solid #334155;
+        }
+        
+        .serial-line:last-child {
+            border-bottom: none;
+        }
+        
+        /* Patient List (PT View) */
+        .patient-list {
+            display: grid;
+            gap: 1rem;
+        }
+        
+        .patient-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .patient-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        
+        .patient-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary, #764ba2) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .patient-info h4 {
+            margin-bottom: 0.25rem;
+        }
+        
+        .patient-meta {
+            color: var(--gray);
+            font-size: 0.875rem;
+        }
+        
+        .patient-status {
+            margin-left: auto;
+            text-align: right;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s;
+            }
+            
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Utility */
+        .hidden { display: none !important; }
+        .text-center { text-align: center; }
+        .mb-4 { margin-bottom: 1rem; }
+        
+        /* Export buttons */
+        .btn-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+        
+        .btn-secondary {
+            background: white;
+            color: var(--dark);
+            border: 2px solid var(--border);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--light);
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div class="login-container" id="loginScreen">
+        <div class="login-box">
+            <h1><i class="fas fa-wave-square"></i> Knee ROM Tracker</h1>
+            <p class="text-center mb-4" style="color: var(--gray);">Clinical Portal v2.1</p>
+            
+            <div class="role-selector">
+                <button class="role-btn active" onclick="selectRole('patient')">
+                    <i class="fas fa-user"></i>
+                    Patient
+                </button>
+                <button class="role-btn" onclick="selectRole('pt')">
+                    <i class="fas fa-user-md"></i>
+                    Physical Therapist
+                </button>
+            </div>
+            
+            <div class="form-group">
+                <label>ID / License Number</label>
+                <input type="text" id="userId" placeholder="Enter your ID">
+            </div>
+            
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" placeholder="••••••••">
+            </div>
+            
+            <button class="btn" onclick="login()">Sign In</button>
+            
+            <p class="text-center" style="margin-top: 1.5rem; font-size: 0.875rem; color: var(--gray);">
+                <i class="fas fa-shield-alt"></i> HIPAA Compliant Secure Connection
+            </p>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="dashboard" id="dashboard">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <i class="fas fa-wave-square"></i>
+                ROM Tracker
+            </div>
+            
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a class="nav-link active" onclick="showSection('overview')">
+                        <i class="fas fa-chart-line"></i>
+                        Overview
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" onclick="showSection('realtime')">
+                        <i class="fas fa-broadcast-tower"></i>
+                        Real-time Data
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" onclick="showSection('diagnostics')">
+                        <i class="fas fa-stethoscope"></i>
+                        Diagnostics
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" onclick="showSection('history')">
+                        <i class="fas fa-history"></i>
+                        Session History
+                    </a>
+                </li>
+                <li class="nav-item pt-only hidden">
+                    <a class="nav-link" onclick="showSection('patients')">
+                        <i class="fas fa-users"></i>
+                        My Patients
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" onclick="showSection('settings')">
+                        <i class="fas fa-cog"></i>
+                        Settings
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Logout
+                    </a>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <div class="header">
+                <div>
+                    <h2 id="pageTitle">Dashboard Overview</h2>
+                    <p style="color: var(--gray);" id="pageSubtitle">Real-time knee ROM monitoring</p>
+                </div>
+                <div class="user-info">
+                    <span class="badge" id="roleBadge">Patient</span>
+                    <span id="userName">John Doe</span>
+                </div>
+            </div>
+
+            <!-- Connection Panel -->
+            <div class="connection-panel">
+                <div class="connection-status">
+                    <div class="status-dot" id="statusDot"></div>
+                    <div>
+                        <div style="font-weight: 600;">Device Status</div>
+                        <div style="font-size: 0.875rem; color: var(--gray);" id="statusText">Disconnected - Connect CPX via USB</div>
+                    </div>
+                </div>
+                <button class="btn btn-sm" onclick="toggleConnection()" id="connectBtn" style="width: auto;">
+                    <i class="fas fa-plug"></i> Connect Device
+                </button>
+            </div>
+
+            <!-- Overview Section -->
+            <section id="overview-section">
+                <div class="stats-grid">
+                    <div class="stat-card success">
+                        <div class="stat-label">Current ROM</div>
+                        <div class="stat-value" id="currentROM">--<span class="stat-unit">°</span></div>
+                        <div class="stat-trend trend-up">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>+12° from last session</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Session Reps</div>
+                        <div class="stat-value" id="sessionReps">--</div>
+                        <div class="stat-trend">
+                            <span>Target: 15 reps</span>
+                        </div>
+                    </div>
+                    <div class="stat-card warning">
+                        <div class="stat-label">Avg Quality</div>
+                        <div class="stat-value" id="avgQuality">--<span class="stat-unit">%</span></div>
+                        <div class="stat-trend trend-down">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span>Reposition sensor</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Max Flexion</div>
+                        <div class="stat-value" id="maxFlexion">--<span class="stat-unit">°</span></div>
+                        <div class="stat-trend trend-up">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Normal range</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3 class="chart-title">ROM Progression</h3>
+                            <select style="padding: 0.5rem; border-radius: 6px; border: 1px solid var(--border);">
+                                <option>Last 7 Days</option>
+                                <option>Last 30 Days</option>
+                                <option>All Time</option>
+                            </select>
+                        </div>
+                        <canvas id="romChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Repetition Quality</h3>
+                        </div>
+                        <canvas id="qualityChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Real-time Section -->
+            <section id="realtime-section" class="hidden">
+                <div class="charts-grid">
+                    <div class="chart-container" style="grid-column: 1 / -1;">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Live Angle Stream</h3>
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-secondary" onclick="clearData()">
+                                    <i class="fas fa-trash"></i> Clear
+                                </button>
+                                <button class="btn btn-sm btn-secondary" onclick="exportData()">
+                                    <i class="fas fa-download"></i> Export CSV
+                                </button>
+                            </div>
+                        </div>
+                        <canvas id="liveChart" height="100"></canvas>
+                    </div>
+                </div>
+                
+                <div class="data-section">
+                    <div class="section-header-flex">
+                        <h3>Raw Serial Data</h3>
+                        <span class="quality-indicator quality-high" id="liveQuality">
+                            <i class="fas fa-signal"></i> Quality: 95%
+                        </span>
+                    </div>
+                    <div class="serial-output" id="serialOutput">
+                        <div class="serial-line">Waiting for device connection...</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Diagnostics Section -->
+            <section id="diagnostics-section" class="hidden">
+                <div class="diagnostic-panel">
+                    <h3><i class="fas fa-clipboard-check"></i> Clinical Assessment</h3>
+                    <p style="color: var(--gray); margin-top: 0.5rem;">Based on current session data and historical trends</p>
+                    
+                    <div class="diagnostic-grid">
+                        <div class="diagnostic-card">
+                            <h4><i class="fas fa-arrows-alt-h"></i> Range of Motion</h4>
+                            <div class="diagnostic-value diagnostic-normal" id="diagROM">125°</div>
+                            <p>Normal knee flexion range achieved</p>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 92%; background: var(--success);"></div>
+                            </div>
+                            <p style="font-size: 0.875rem; color: var(--gray); margin-top: 0.5rem;">92% of expected range (135°)</p>
+                        </div>
+                        
+                        <div class="diagnostic-card">
+                            <h4><i class="fas fa-tachometer-alt"></i> Movement Velocity</h4>
+                            <div class="diagnostic-value diagnostic-warning" id="diagVelocity">45°/s</div>
+                            <p>Below optimal speed for strengthening</p>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 60%; background: var(--warning);"></div>
+                            </div>
+                            <p style="font-size: 0.875rem; color: var(--gray); margin-top: 0.5rem;">Target: 60-90°/s</p>
+                        </div>
+                        
+                        <div class="diagnostic-card">
+                            <h4><i class="fas fa-redo"></i> Repetition Consistency</h4>
+                            <div class="diagnostic-value diagnostic-normal" id="diagConsistency">87%</div>
+                            <p>Good consistency across reps</p>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 87%; background: var(--success);"></div>
+                            </div>
+                            <p style="font-size: 0.875rem; color: var(--gray); margin-top: 0.5rem;">Coefficient of variation</p>
+                        </div>
+                        
+                        <div class="diagnostic-card">
+                            <h4><i class="fas fa-exclamation-triangle"></i> Pain Indicator</h4>
+                            <div class="diagnostic-value diagnostic-normal" id="diagPain">None</div>
+                            <p>No abnormal movement patterns detected</p>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 100%; background: var(--success);"></div>
+                            </div>
+                            <p style="font-size: 0.875rem; color: var(--gray); margin-top: 0.5rem;">Based on velocity profiles</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="data-section">
+                    <h3 class="mb-4">Medical Notes</h3>
+                    <textarea style="width: 100%; min-height: 150px; padding: 1rem; border: 2px solid var(--border); border-radius: 8px; font-family: inherit; resize: vertical;" placeholder="Enter clinical observations..."></textarea>
+                    <div style="margin-top: 1rem; text-align: right;">
+                        <button class="btn" style="width: auto;">
+                            <i class="fas fa-save"></i> Save to Patient Record
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- History Section -->
+            <section id="history-section" class="hidden">
+                <div class="data-section">
+                    <div class="section-header-flex">
+                        <h3>Session History</h3>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-secondary">
+                                <i class="fas fa-filter"></i> Filter
+                            </button>
+                            <button class="btn btn-sm btn-secondary">
+                                <i class="fas fa-file-export"></i> Export All
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Duration</th>
+                                <th>Max ROM</th>
+                                <th>Reps</th>
+                                <th>Avg Quality</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTable">
+                            <tr>
+                                <td>2024-01-15 09:30 AM</td>
+                                <td>12 min</td>
+                                <td>128°</td>
+                                <td>15</td>
+                                <td><span class="quality-indicator quality-high">94%</span></td>
+                                <td><i class="fas fa-check-circle" style="color: var(--success);"></i> Complete</td>
+                            </tr>
+                            <tr>
+                                <td>2024-01-13 02:15 PM</td>
+                                <td>10 min</td>
+                                <td>122°</td>
+                                <td>12</td>
+                                <td><span class="quality-indicator quality-medium">78%</span></td>
+                                <td><i class="fas fa-check-circle" style="color: var(--success);"></i> Complete</td>
+                            </tr>
+                            <tr>
+                                <td>2024-01-10 11:00 AM</td>
+                                <td>15 min</td>
+                                <td>118°</td>
+                                <td>18</td>
+                                <td><span class="quality-indicator quality-high">91%</span></td>
+                                <td><i class="fas fa-check-circle" style="color: var(--success);"></i> Complete</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Patients Section (PT Only) -->
+            <section id="patients-section" class="hidden pt-only">
+                <div class="data-section">
+                    <div class="section-header-flex">
+                        <h3>My Patients</h3>
+                        <button class="btn btn-sm" style="width: auto;">
+                            <i class="fas fa-plus"></i> Add Patient
+                        </button>
+                    </div>
+                    
+                    <div class="patient-list">
+                        <div class="patient-card" onclick="selectPatient(1)">
+                            <div class="patient-avatar">JD</div>
+                            <div class="patient-info">
+                                <h4>John Doe</h4>
+                                <div class="patient-meta">ID: P-2024-001 • Post-TKA Day 14</div>
+                            </div>
+                            <div class="patient-status">
+                                <div style="font-weight: 600; color: var(--success);">128° ROM</div>
+                                <div style="font-size: 0.875rem; color: var(--gray);">On track</div>
+                            </div>
+                        </div>
+                        
+                        <div class="patient-card" onclick="selectPatient(2)">
+                            <div class="patient-avatar">AS</div>
+                            <div class="patient-info">
+                                <h4>Alice Smith</h4>
+                                <div class="patient-meta">ID: P-2024-015 • ACL Repair Week 6</div>
+                            </div>
+                            <div class="patient-status">
+                                <div style="font-weight: 600; color: var(--warning);">95° ROM</div>
+                                <div style="font-size: 0.875rem; color: var(--gray);">Below target</div>
+                            </div>
+                        </div>
+                        
+                        <div class="patient-card" onclick="selectPatient(3)">
+                            <div class="patient-avatar">MJ</div>
+                            <div class="patient-info">
+                                <h4>Michael Johnson</h4>
+                                <div class="patient-meta">ID: P-2024-023 • Meniscectomy Day 7</div>
+                            </div>
+                            <div class="patient-status">
+                                <div style="font-weight: 600; color: var(--success);">135° ROM</div>
+                                <div style="font-size: 0.875rem; color: var(--gray);">Excellent</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings Section -->
+            <section id="settings-section" class="hidden">
+                <div class="data-section">
+                    <h3 class="mb-4">Device Configuration</h3>
+                    
+                    <div class="form-group">
+                        <label>Sampling Rate</label>
+                        <select style="width: 100%; padding: 0.75rem; border: 2px solid var(--border); border-radius: 8px;">
+                            <option value="50" selected>50 Hz (Standard)</option>
+                            <option value="100">100 Hz (High Precision)</option>
+                            <option value="25">25 Hz (Battery Save)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Calibration Reference</label>
+                        <input type="number" value="0" style="width: 100%; padding: 0.75rem; border: 2px solid var(--border); border-radius: 8px;">
+                        <p style="font-size: 0.875rem; color: var(--gray); margin-top: 0.5rem;">Full extension angle offset</p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Alert Thresholds</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div>
+                                <span style="font-size: 0.875rem; color: var(--gray);">Min Quality (%)</span>
+                                <input type="number" value="70" style="width: 100%; padding: 0.75rem; border: 2px solid var(--border); border-radius: 8px; margin-top: 0.25rem;">
+                            </div>
+                            <div>
+                                <span style="font-size: 0.875rem; color: var(--gray);">Target ROM (°)</span>
+                                <input type="number" value="135" style="width: 100%; padding: 0.75rem; border: 2px solid var(--border); border-radius: 8px; margin-top: 0.25rem;">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button class="btn" style="width: auto;">
+                        <i class="fas fa-save"></i> Save Settings
+                    </button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Global State
+        let currentRole = 'patient';
+        let isConnected = false;
+        let port = null;
+        let reader = null;
+        let dataBuffer = [];
+        let charts = {};
+        
+        // Role Selection
+        function selectRole(role) {
+            currentRole = role;
+            document.querySelectorAll('.role-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.closest('.role-btn').classList.add('active');
+        }
+        
+        // Login
+        function login() {
+            const userId = document.getElementById('userId').value;
+            if (!userId) {
+                alert('Please enter your ID');
+                return;
+            }
+            
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            
+            // Update UI based on role
+            document.getElementById('roleBadge').textContent = currentRole === 'pt' ? 'Physical Therapist' : 'Patient';
+            document.getElementById('roleBadge').className = 'badge ' + (currentRole === 'pt' ? 'badge-pt' : 'badge-patient');
+            document.getElementById('userName').textContent = currentRole === 'pt' ? 'Dr. Sarah Johnson' : 'John Doe';
+            
+            // Show PT-only elements
+            if (currentRole === 'pt') {
+                document.querySelectorAll('.pt-only').forEach(el => el.classList.remove('hidden'));
+            }
+            
+            // Initialize charts
+            initCharts();
+        }
+        
+        function logout() {
+            location.reload();
+        }
+        
+        // Navigation
+        function showSection(section) {
+            // Update nav
+            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+            event.target.closest('.nav-link').classList.add('active');
+            
+            // Hide all sections
+            document.querySelectorAll('section').forEach(sec => sec.classList.add('hidden'));
+            
+            // Show selected
+            const sectionMap = {
+                'overview': 'overview-section',
+                'realtime': 'realtime-section',
+                'diagnostics': 'diagnostics-section',
+                'history': 'history-section',
+                'patients': 'patients-section',
+                'settings': 'settings-section'
+            };
+            
+            document.getElementById(sectionMap[section]).classList.remove('hidden');
+            
+            // Update titles
+            const titles = {
+                'overview': ['Dashboard Overview', 'Real-time knee ROM monitoring'],
+                'realtime': ['Real-time Monitoring', 'Live data stream from CPX'],
+                'diagnostics': ['Clinical Diagnostics', 'Medical assessment and analysis'],
+                'history': ['Session History', 'Historical data and trends'],
+                'patients': ['Patient Management', 'Monitor your patients'],
+                'settings': ['Device Settings', 'Configure CPX parameters']
+            };
+            
+            document.getElementById('pageTitle').textContent = titles[section][0];
+            document.getElementById('pageSubtitle').textContent = titles[section][1];
+        }
+        
+        // Serial Connection
+        async function toggleConnection() {
+            if (!isConnected) {
+                try {
+                    port = await navigator.serial.requestPort();
+                    await port.open({ baudRate: 115200 });
+                    
+                    isConnected = true;
+                    document.getElementById('statusDot').classList.add('connected');
+                    document.getElementById('statusText').textContent = 'Connected - Receiving data from CPX';
+                    document.getElementById('connectBtn').innerHTML = '<i class="fas fa-times"></i> Disconnect';
+                    
+                    readSerialData();
+                } catch (err) {
+                    console.error('Connection failed:', err);
+                    alert('Failed to connect. Ensure CPX is plugged in and running the ROM Tracker code.');
+                }
+            } else {
+                if (reader) {
+                    await reader.cancel();
+                    reader = null;
+                }
+                if (port) {
+                    await port.close();
+                    port = null;
+                }
+                
+                isConnected = false;
+                document.getElementById('statusDot').classList.remove('connected');
+                document.getElementById('statusText').textContent = 'Disconnected - Connect CPX via USB';
+                document.getElementById('connectBtn').innerHTML = '<i class="fas fa-plug"></i> Connect Device';
+            }
+        }
+        
+        async function readSerialData() {
+            const decoder = new TextDecoder();
+            reader = port.readable.getReader();
+            
+            try {
+                while (isConnected) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    
+                    const text = decoder.decode(value);
+                    processSerialData(text);
+                }
+            } catch (err) {
+                console.error('Read error:', err);
+            }
+        }
+        
+        function processSerialData(text) {
+            // Parse CPX data format
+            const lines = text.split('\n');
+            
+            lines.forEach(line => {
+                if (line.includes('angle')) {
+                    // Parse angle value
+                    const match = line.match(/angle[\s:]+([\d.]+)/);
+                    if (match) {
+                        const angle = parseFloat(match[1]);
+                        updateLiveData(angle);
+                    }
+                }
+                
+                // Add to serial output
+                const output = document.getElementById('serialOutput');
+                const div = document.createElement('div');
+                div.className = 'serial-line';
+                div.textContent = line.trim();
+                output.appendChild(div);
+                output.scrollTop = output.scrollHeight;
+                
+                // Keep only last 50 lines
+                while (output.children.length > 50) {
+                    output.removeChild(output.firstChild);
+                }
+            });
+        }
+        
+        function updateLiveData(angle) {
+            // Update current ROM display
+            document.getElementById('currentROM').innerHTML = angle + '<span class="stat-unit">°</span>';
+            
+            // Add to chart data
+            const now = new Date();
+            const timeLabel = now.toLocaleTimeString();
+            
+            if (charts.live) {
+                charts.live.data.labels.push(timeLabel);
+                charts.live.data.datasets[0].data.push(angle);
+                
+                // Keep last 50 points
+                if (charts.live.data.labels.length > 50) {
+                    charts.live.data.labels.shift();
+                    charts.live.data.datasets[0].data.shift();
+                }
+                
+                charts.live.update('none'); // efficient update
+            }
+            
+            // Update stats
+            dataBuffer.push(angle);
+            if (dataBuffer.length > 100) dataBuffer.shift();
+            
+            // Calculate max
+            const max = Math.max(...dataBuffer);
+            document.getElementById('maxFlexion').innerHTML = max + '<span class="stat-unit">°</span>';
+        }
+        
+        // Charts
+        function initCharts() {
+            // ROM Progress Chart
+            const romCtx = document.getElementById('romChart').getContext('2d');
+            charts.rom = new Chart(romCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Day 1', 'Day 3', 'Day 5', 'Day 7', 'Day 10', 'Day 12', 'Day 14'],
+                    datasets: [{
+                        label: 'Max ROM (°)',
+                        data: [85, 95, 105, 115, 122, 125, 128],
+                        borderColor: '#2563eb',
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }, {
+                        label: 'Target',
+                        data: [90, 100, 110, 120, 125, 130, 135],
+                        borderColor: '#10b981',
+                        borderDash: [5, 5],
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 140,
+                            title: { display: true, text: 'Degrees' }
+                        }
+                    }
+                }
+            });
+            
+            // Quality Chart
+            const qualityCtx = document.getElementById('qualityChart').getContext('2d');
+            charts.quality = new Chart(qualityCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Rep 1', 'Rep 2', 'Rep 3', 'Rep 4', 'Rep 5', 'Rep 6', 'Rep 7', 'Rep 8'],
+                    datasets: [{
+                        label: 'Quality Score (%)',
+                        data: [92, 88, 95, 90, 87, 93, 91, 89],
+                        backgroundColor: [
+                            '#10b981', '#10b981', '#10b981', '#10b981',
+                            '#f59e0b', '#10b981', '#10b981', '#10b981'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+            
+            // Live Chart
+            const liveCtx = document.getElementById('liveChart').getContext('2d');
+            charts.live = new Chart(liveCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Knee Angle (°)',
+                        data: [],
+                        borderColor: '#2563eb',
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        fill: true,
+                        tension: 0.1,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    scales: {
+                        y: {
+                            min: 0,
+                            max: 140,
+                            title: { display: true, text: 'Degrees' }
+                        },
+                        x: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Utilities
+        function clearData() {
+            if (charts.live) {
+                charts.live.data.labels = [];
+                charts.live.data.datasets[0].data = [];
+                charts.live.update();
+            }
+            dataBuffer = [];
+            document.getElementById('serialOutput').innerHTML = '<div class="serial-line">Data cleared. Waiting for new data...</div>';
+        }
+        
+        function exportData() {
+            let csv = 'Time,Angle\n';
+            if (charts.live) {
+                charts.live.data.labels.forEach((label, i) => {
+                    csv += `${label},${charts.live.data.datasets[0].data[i]}\n`;
+                });
+            }
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `rom-data-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+        }
+        
+        function selectPatient(id) {
+            alert(`Loading patient ${id} data...`);
+            showSection('overview');
+        }
+        
+        // Simulate data for demo
+        setInterval(() => {
+            if (!isConnected && document.getElementById('realtime-section').classList.contains('hidden') === false) {
+                // Demo mode: generate fake data
+                const fakeAngle = 45 + Math.sin(Date.now() / 1000) * 30 + Math.random() * 5;
+                updateLiveData(Math.round(fakeAngle * 10) / 10);
+            }
+        }, 100);
+    </script>
+</body>
+</html>
